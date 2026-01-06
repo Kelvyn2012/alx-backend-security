@@ -12,11 +12,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 # Set these for your live host(s)
-ALLOWED_HOSTS = (
-    os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
-    if os.getenv("DJANGO_ALLOWED_HOSTS")
-    else []
-)
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".onrender.com",
+    "alx-project-nexus-vetk.onrender.com",
+]
+
 CSRF_TRUSTED_ORIGINS = (
     os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS")
