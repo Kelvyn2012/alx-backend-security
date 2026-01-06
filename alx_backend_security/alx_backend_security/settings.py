@@ -2,17 +2,26 @@ from pathlib import Path
 from celery.schedules import crontab
 from dotenv import load_dotenv
 import os
+import dj_database_url
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 # Set these for your live host(s)
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if os.getenv("DJANGO_ALLOWED_HOSTS") else []
-CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS") else []
+ALLOWED_HOSTS = (
+    os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+    if os.getenv("DJANGO_ALLOWED_HOSTS")
+    else []
+)
+CSRF_TRUSTED_ORIGINS = (
+    os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS")
+    else []
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -58,18 +67,25 @@ TEMPLATES = [
 WSGI_APPLICATION = "alx_backend_security.wsgi.application"
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+# Use DATABASE_URL if available (Render provides this), otherwise use individual settings
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"), conn_max_age=600
+        )
     }
-}
+else:
+    # Fallback to individual settings for local development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "ip_tracking_db"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+        }
+    }
 
 
 # Password validation
@@ -83,7 +99,7 @@ USE_TZ = True
 
 # Static / Media
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"   # required for collectstatic in prod
+STATIC_ROOT = BASE_DIR / "staticfiles"  # required for collectstatic in prod
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -94,7 +110,7 @@ RATELIMIT_ENABLE = True
 # Remove RATELIMIT_VIEW unless you point it to a callable. Use @ratelimit(..., block=True) on views.
 
 # Celery
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")          # e.g. amqps://... from CloudAMQP
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")  # e.g. amqps://... from CloudAMQP
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "rpc://")
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ALWAYS_EAGER = False
